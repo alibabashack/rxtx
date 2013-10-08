@@ -157,7 +157,7 @@
                 </os>
             </activation>
             <modules>
-                <module>librxtxSerial-linux-x86</module>
+                <module>rxtxSerial-linux-x86</module>
             </modules>
         </profile>
         <profile>
@@ -170,19 +170,19 @@
                 </os>
             </activation>
             <modules>
-                <module>librxtxSerial-linux-x86_64</module>
+                <module>rxtxSerial-linux-x86_64</module>
             </modules>
         </profile>
         <profile>
             <id>with-linux-armel</id>
             <modules>
-                <module>librxtxSerial-linux-armel</module>
+                <module>rxtxSerial-linux-armel</module>
             </modules>
         </profile>
         <profile>
             <id>with-linux-armhf</id>
             <modules>
-                <module>librxtxSerial-linux-armhf</module>
+                <module>rxtxSerial-linux-armhf</module>
             </modules>
         </profile>
         <profile>
@@ -206,7 +206,7 @@
                 </os>
             </activation>
             <modules>
-                <module>librxtxSerial-osx-x86_64</module>
+                <module>rxtxSerial-osx-x86_64</module>
             </modules>
         </profile>
         <profile>
