@@ -61,9 +61,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.SecureRandom;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The LibraryLoader enables driver implementations to load native libraries
@@ -89,8 +88,8 @@ public final class LibraryLoader {
     private static final String OS_WINDOWS = "windows";
     private static final String ARCH_X86 = "x86";
     private static final String ARCH_X86_64 = "x86_64";
-    private static final Logger LOGGER =
-            Logger.getLogger(LibraryLoader.class.getName());
+    private static final Logger logger =
+            LoggerFactory.getLogger(LibraryLoader.class);
     private final ClassLoader classLoader;
     private final String resourcePath;
     private final String osClass;
@@ -101,8 +100,8 @@ public final class LibraryLoader {
      * the native library in the resources (e.g. a JAR file) at the given
      * resourcePath.
      *
-     * <p>e.g. if the libraries are packed into the directory bin/jni inside
-     * the JAR, then resourcePath is bin/jni.</p>
+     * <p>e.g. if the libraries are packed into the directory bin/jni inside the
+     * JAR, then resourcePath is bin/jni.</p>
      *
      * @param classLoader the class loader used to find the bundled library
      * @param resourcePath the path inside the JAR without trailing slash
@@ -169,8 +168,8 @@ public final class LibraryLoader {
      * base name. It was mapped to the operating system's naming convention for
      * dynamic libraries using the System.mapLibraryName() method. This will
      * typically assign a system dependent file extension. For example the
-     * hinted library name of the <i>Foo Bar Lib</i> on Windows x86
-     * is <i>foobar-windows-x86.dll</i>. On linux it might look like
+     * hinted library name of the <i>Foo Bar Lib</i> on Windows x86 is
+     * <i>foobar-windows-x86.dll</i>. On linux it might look like
      * <i>foobar-linux-x86.so</i>.
      *
      * <p>This method tries to find the library from the following locations in
@@ -190,17 +189,16 @@ public final class LibraryLoader {
      */
     public boolean load(String nonHintedBaseName) {
         if (osClass == null) {
-            LOGGER.log(Level.SEVERE,
+            logger.error(
                     "Unknown operating system! Can't resolve library name");
             return false;
         }
         if (architecture == null) {
-            LOGGER.log(Level.SEVERE,
+            logger.error(
                     "Unknown CPU/JVM architecture! Can't resolve library name");
             return false;
         }
-
-        LOGGER.log(Level.FINEST, "try to load hinted lib from resource");
+        logger.trace("try to load hinted lib from resource");
         final String hintedBaseName =
                 nonHintedBaseName + "-" + osClass + "-" + architecture;
         final String hintedLibraryName = mapLibraryName(hintedBaseName);
@@ -211,45 +209,42 @@ public final class LibraryLoader {
                 final String libCanonicalName =
                         extractLibFromJar(resourcePath, hintedLibraryName);
                 System.load(libCanonicalName);
-                LOGGER.log(Level.FINE,
-                        "Loaded JNI lib {0} (extracted from resource)",
+                logger.trace(
+                        "Loaded JNI lib {} (extracted from resource)",
                         libCanonicalName);
                 return true;
             } catch (IOException ex) {
-                LOGGER.log(Level.WARNING, "Could not extract lib from JAR", ex);
+                logger.warn("Could not extract lib from JAR", ex);
             }
         } else {
-            LOGGER.log(Level.FINER, "JNI lib {0} not in resource at {1}",
+            logger.trace("JNI lib {} not in resource at {}",
                     new Object[]{hintedLibraryName, fullLibPath});
         }
 
-        LOGGER.log(Level.FINEST,
-                "try to load hinted lib from default library path");
+        logger.trace("try to load hinted lib from default library path");
         try {
             System.loadLibrary(hintedBaseName);
-            LOGGER.log(Level.FINE, "Loaded hinted lib {0} from library path",
+            logger.trace("Loaded hinted lib {} from library path",
                     hintedLibraryName);
             return true;
         } catch (UnsatisfiedLinkError ex) {
-            LOGGER.log(Level.FINER, "hinted lib {0} not in library path",
+            logger.trace("hinted lib {} not in library path",
                     hintedLibraryName);
         }
 
-        LOGGER.log(Level.FINEST,
-                "try to load non-hinted lib from default library path");
+        logger.trace("try to load non-hinted lib from default library path");
         try {
             System.loadLibrary(nonHintedBaseName);
-            LOGGER.log(Level.FINE,
-                    "Loaded non-hinted lib {0} from library path",
+            logger.trace("Loaded non-hinted lib {} from library path",
                     nonHintedBaseName);
             return true;
         } catch (UnsatisfiedLinkError ex) {
-            LOGGER.log(Level.FINER, "non-hinted lib {0} not in library path",
+            logger.trace("non-hinted lib {} not in library path",
                     nonHintedBaseName);
         }
-        LOGGER.log(Level.WARNING,
-                "Stopping search. No implementation of JNI library {0} found"
-                + "for architecture {1} on OS {2}.",
+        logger.warn(
+                "Stopping search. No implementation of JNI library {} found"
+                + "for architecture {} on OS {}.",
                 new Object[]{nonHintedBaseName, architecture, osClass});
         return false;
     }
@@ -257,8 +252,8 @@ public final class LibraryLoader {
     /**
      * Extracts a file from resources.
      *
-     * <p>Uses the library loader class loader to copy a resource file
-     * to a temporary file.</p>
+     * <p>Uses the library loader class loader to copy a resource file to a
+     * temporary file.</p>
      *
      * @param path the path to the resource
      * @param fileName the name of the resource
@@ -287,8 +282,8 @@ public final class LibraryLoader {
     }
 
     /**
-     * Tests if a given file name is available in the resources of
-     * the library loader class loader.
+     * Tests if a given file name is available in the resources of the library
+     * loader class loader.
      *
      * @param fileName the file name of the resource file
      * @return true if the file is available, false otherwise
@@ -324,16 +319,14 @@ public final class LibraryLoader {
         } else if ("Linux".equals(osName)) {
             return OS_LINUX;
         } else {
-            LOGGER.log(Level.INFO,
-                    "The os.name value {0} is unknown. Please file a bug.",
+            logger.info("The os.name value {} is unknown. Please file a bug.",
                     osName);
             return null;
         }
     }
 
     /**
-     * Maps the current platform architecture into a class of
-     * architectures.
+     * Maps the current platform architecture into a class of architectures.
      *
      * There are many different os.arch values for one architecture under
      * different JVMs. e.g. amd64 and x86_64 are two names for the same
@@ -354,8 +347,7 @@ public final class LibraryLoader {
                 || "amd64".equals(osArch)) {
             return ARCH_X86_64;
         } else {
-            LOGGER.log(Level.INFO,
-                    "The os.arch value {0} is unknown. Please file a bug.",
+            logger.info("The os.arch value {} is unknown. Please file a bug.",
                     osArch);
             return null;
         }
@@ -364,12 +356,12 @@ public final class LibraryLoader {
     /**
      * Maps the library base name to the platform specific library name.
      *
-     * Some operating systems allow multiple library naming conventions, but
-     * the architecture of {@link System.mapLibraryName} does not allows this.
-     * On some os like mac OSX the default library mapping depends on the
-     * JVM version, but on all JVMs both library variants can be actually
-     * loaded. This wrapper ensures, that the correct naming convention is
-     * used, independent from the JVM version.
+     * Some operating systems allow multiple library naming conventions, but the
+     * architecture of {@link System.mapLibraryName} does not allows this. On
+     * some os like mac OSX the default library mapping depends on the JVM
+     * version, but on all JVMs both library variants can be actually loaded.
+     * This wrapper ensures, that the correct naming convention is used,
+     * independent from the JVM version.
      *
      * @param baseName the library base name
      * @return the platform specific library name

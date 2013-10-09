@@ -67,13 +67,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.util.TooManyListenersException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class RXTXPort extends SerialPort {
 
-    private static final Logger LOGGER =
-            Logger.getLogger(RXTXPort.class.getName());
+    private static final Logger logger = 
+            LoggerFactory.getLogger(RXTXPort.class);
     private final DriverContext context;
 
     /**
@@ -234,8 +234,8 @@ final class RXTXPort extends SerialPort {
 
     public synchronized void setSerialPortParams(int b, int d, int s, int p)
             throws UnsupportedCommOperationException {
-        LOGGER.log(Level.FINEST,
-                "RXTXPort:setSerialPortParams({0} {1} {2} {3}) called",
+        logger.trace(
+                "RXTXPort:setSerialPortParams({} {} {} {}) called",
                 new Object[]{b, d, s, p});
 
         if (nativeSetSerialPortParams(b, d, s, p)) {
@@ -278,13 +278,13 @@ final class RXTXPort extends SerialPort {
 
     public void setFlowControlMode(int flowcontrol) {
         if (monThreadisInterrupted) {
-            LOGGER.log(Level.FINEST, "MonThread is Interrupeted, returning");
+            logger.trace("MonThread is Interrupeted, returning");
             return;
         }
         try {
             setflowcontrol(flowcontrol);
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "setting flow control failed", e);
+            logger.warn("setting flow control failed", e);
             return;
         }
         flowmode = flowcontrol;
@@ -305,8 +305,7 @@ final class RXTXPort extends SerialPort {
     }
 
     public void disableReceiveFraming() {
-        LOGGER.log(Level.INFO,
-                "disableReceiveFraming is a dummy method (noop)");
+        logger.info("disableReceiveFraming is a dummy method (noop)");
     }
 
     public boolean isReceiveFramingEnabled() {
@@ -486,8 +485,7 @@ final class RXTXPort extends SerialPort {
 
     public boolean checkMonitorThread() {
         if (monThread != null) {
-            LOGGER.log(Level.FINEST, "monThreadisInterrupted = {0}",
-                    monThreadisInterrupted);
+            logger.trace("monThreadisInterrupted = {}", monThreadisInterrupted);
             return monThreadisInterrupted;
         }
         return true;
@@ -601,7 +599,7 @@ final class RXTXPort extends SerialPort {
         waitForTheNativeCodeSilly();
         //if( monThread != null && monThread.isAlive() )
         if (monThreadisInterrupted == true) {
-            LOGGER.log(Level.FINEST, "already interrupted");
+            logger.trace("already interrupted");
             monThread = null;
             SPEventListener = null;
             return;
@@ -623,7 +621,7 @@ final class RXTXPort extends SerialPort {
             }
 
             if (monThread.isAlive()) {
-                LOGGER.log(Level.WARNING, "MonThread is still alive!");
+                logger.warn("MonThread is still alive!");
             }
 
         }
@@ -744,9 +742,9 @@ final class RXTXPort extends SerialPort {
 
     public void close() {
         synchronized (this) {
-            LOGGER.log(Level.FINER, "closing port {0}", name);
+            logger.trace("closing port {}", name);
             while (IOLocked > 0) {
-                LOGGER.log(Level.FINEST, "IO is locked: {0}", IOLocked);
+                logger.trace("IO is locked: {}", IOLocked);
                 try {
                     this.wait(500);
                 } catch (InterruptedException ie) {
@@ -766,8 +764,7 @@ final class RXTXPort extends SerialPort {
         }
 
         if (fd <= 0) {
-            LOGGER.log(Level.FINEST,
-                    "detected bad File Descriptor: {0}", fd);
+            logger.trace("detected bad File Descriptor: {}", fd);
             return;
         }
         setDTR(false);
@@ -782,7 +779,7 @@ final class RXTXPort extends SerialPort {
     }
 
     protected void finalize() {
-        LOGGER.log(Level.FINEST, "finalizer started");
+        logger.trace("finalizer started");
         if (fd > 0) {
             close();
         }
@@ -919,7 +916,7 @@ final class RXTXPort extends SerialPort {
                 throw new IOException();
             }
             if (monThreadisInterrupted) {
-                LOGGER.log(Level.FINEST, "monitor thread is interrupted");
+                logger.trace("monitor thread is interrupted");
             }
             synchronized (IOLockedMutex) {
                 IOLocked++;
@@ -973,8 +970,7 @@ final class RXTXPort extends SerialPort {
                 throws IOException {
             int result;
             if (fd == 0) {
-                LOGGER.log(Level.WARNING,
-                        "invalid file descriptor while reading");
+                logger.warn("invalid file descriptor while reading");
                 throw new IOException("invalid file descriptor");
             }
             if (b == null) {
@@ -991,8 +987,7 @@ final class RXTXPort extends SerialPort {
                 throw new IndexOutOfBoundsException("read buffer to small");
             }
             if (len == 0) {
-                LOGGER.log(Level.FINE,
-                        "ineffective call of read with length 0");
+                logger.trace("ineffective call of read with length 0");
                 return 0;
             }
             /*
@@ -1022,7 +1017,7 @@ final class RXTXPort extends SerialPort {
                 minimum = Math.min(minimum, threshold);
             }
             if (monThreadisInterrupted == true) {
-                LOGGER.log(Level.FINEST, "monitor thread is interrupted");
+                logger.trace("monitor thread is interrupted");
                 return 0;
             }
             synchronized (IOLockedMutex) {
@@ -1052,8 +1047,7 @@ final class RXTXPort extends SerialPort {
                 throws IOException {
             int result;
             if (fd == 0) {
-                LOGGER.log(Level.WARNING,
-                        "invalid file descriptor while reading");
+                logger.warn("invalid file descriptor while reading");
                 throw new IOException("invalid file descriptor");
             }
             if (b == null) {
@@ -1070,8 +1064,7 @@ final class RXTXPort extends SerialPort {
                 throw new IndexOutOfBoundsException("read buffer to small");
             }
             if (len == 0) {
-                LOGGER.log(Level.FINE,
-                        "ineffective call of read with length 0");
+                logger.trace("ineffective call of read with length 0");
                 return 0;
             }
             /*
@@ -1101,7 +1094,7 @@ final class RXTXPort extends SerialPort {
                 minimum = Math.min(minimum, threshold);
             }
             if (monThreadisInterrupted == true) {
-                LOGGER.log(Level.FINEST, "monitor thread is interrupted");
+                logger.trace("monitor thread is interrupted");
                 return 0;
             }
             synchronized (IOLockedMutex) {

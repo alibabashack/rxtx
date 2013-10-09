@@ -73,11 +73,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Enumeration;
 import java.util.Properties;
 import java.util.StringTokenizer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is the default rxtx serial driver implementation.
@@ -97,8 +96,8 @@ import java.util.logging.Logger;
 @Deprecated
 public final class RXTXCommDriver implements CommDriver {
 
-    private static final Logger LOGGER = Logger.getLogger(
-            RXTXCommDriver.class.getName());
+    private static final Logger logger =
+            LoggerFactory.getLogger(RXTXCommDriver.class);
     private DriverContext context;
     /**
      * Get the Serial port prefixes for the running OS
@@ -144,9 +143,9 @@ public final class RXTXCommDriver implements CommDriver {
 
         String validPortPrefixes[] = new String[256];
         if (candidatePortPrefixes == null) {
-            LOGGER.log(Level.WARNING,
+            logger.warn(
                     "No ports prefixes known for this System.\n"
-                    + "Please check the port prefixes listed for OS {0} "
+                    + "Please check the port prefixes listed for OS {} "
                     + "in RXTXCommDriver.registerScannedPorts()", osName);
         }
         int i = 0;
@@ -266,9 +265,9 @@ public final class RXTXCommDriver implements CommDriver {
 
             if (testRead(portName, portType)) {
                 context.registerPort(portName, portType, this);
-                LOGGER.log(Level.FINEST, "registered port {0}", portName);
+                logger.trace("registered port {}", portName);
             } else {
-                LOGGER.log(Level.INFO, "port {0} not accessible", portName);
+                logger.info("port {} not accessible", portName);
             }
         }
     }
@@ -303,10 +302,9 @@ public final class RXTXCommDriver implements CommDriver {
     }
 
     /**
-     * Finds the "gnu.io.rxtx.properties" file in java extension dir
-     * (legacy support).
-     * The file gnu.io.rxtx.properties may reside in the java extension dir,
-     * or it can be anywhere in the classpath.
+     * Finds the "gnu.io.rxtx.properties" file in java extension dir (legacy
+     * support). The file gnu.io.rxtx.properties may reside in the java
+     * extension dir, or it can be anywhere in the classpath.
      *
      * @return the properties file object if found or null if no property file
      * found in any extension directory
@@ -326,9 +324,9 @@ public final class RXTXCommDriver implements CommDriver {
     }
 
     /**
-     * Loads the "gnu.io.rxtx.properties" file or resource.
-     * The file gnu.io.rxtx.properties may reside in the java extension dir,
-     * or it can be anywhere in the classpath.
+     * Loads the "gnu.io.rxtx.properties" file or resource. The file
+     * gnu.io.rxtx.properties may reside in the java extension dir, or it can be
+     * anywhere in the classpath.
      *
      * @return the loaded properties or an empty property set if no property
      * source was found.
@@ -341,20 +339,19 @@ public final class RXTXCommDriver implements CommDriver {
             try {
                 in = new FileInputStream(propertyFile);
                 props.load(in);
-                LOGGER.log(Level.FINE,
-                        "loaded properties from file {0}", propertyFile);
+                logger.trace("loaded properties from file {}", propertyFile);
             } catch (FileNotFoundException ex) {
-                LOGGER.log(Level.WARNING,
+                logger.warn(
                         "discovered property file disappeared unexpectedly",
                         ex);
             } catch (IOException ex) {
-                LOGGER.log(Level.WARNING, "could not read property file", ex);
+                logger.warn("could not read property file", ex);
             } finally {
                 if (in != null) {
                     try {
                         in.close();
                     } catch (IOException ex) {
-                        LOGGER.log(Level.WARNING,
+                        logger.warn(
                                 "could not close property file after loading",
                                 ex);
                     }
@@ -369,11 +366,11 @@ public final class RXTXCommDriver implements CommDriver {
                 try {
                     props.load(propertyResource.openStream());
                 } catch (IOException ex) {
-                    LOGGER.log(Level.SEVERE,
+                    logger.error(
                             "could not load property resource file", ex);
                 }
             } else {
-                LOGGER.log(Level.INFO,
+                logger.info(
                         "No property file or resource found (using defaults)");
             }
         }
@@ -427,8 +424,8 @@ public final class RXTXCommDriver implements CommDriver {
      */
     private void registerScannedPorts(int portType) {
         String[] candidateDeviceNames;
-        LOGGER.log(Level.FINEST,
-                "scanning device directory {0} for ports of type {1}",
+        logger.trace(
+                "scanning device directory {} for ports of type {}",
                 new Object[]{deviceDirectory, portType});
         if (osName.equals("Windows CE")) {
             String[] temp = {"COM1:", "COM2:", "COM3:", "COM4:",
@@ -495,13 +492,13 @@ public final class RXTXCommDriver implements CommDriver {
             candidateDeviceNames = temp;
         }
         if (candidateDeviceNames == null) {
-            LOGGER.log(Level.FINEST, "no device files to check");
+            logger.trace("no device files to check");
             return;
         }
 
         String candidatePortPrefixes[] = {};
         if (portType == CommPortIdentifier.PORT_SERIAL) {
-            LOGGER.log(Level.FINEST, "scanning for serial ports for os {0}",
+            logger.trace("scanning for serial ports for os {}",
                     osName);
 
             /*
@@ -697,13 +694,11 @@ public final class RXTXCommDriver implements CommDriver {
                 };
                 candidatePortPrefixes = temp;
             } else {
-                LOGGER.log(Level.FINEST,
-                        "No valid prefixes for serial ports have been entered "
-                        + "for {0}",
-                        osName);
+                logger.trace("No valid prefixes for serial ports have been "
+                        + "entered for {}", osName);
             }
         } else {
-            LOGGER.log(Level.FINEST, "Unknown PortType {0} passed", portType);
+            logger.trace("Unknown PortType {} passed", portType);
         }
 
         registerValidPorts(candidateDeviceNames, candidatePortPrefixes, portType);
@@ -719,10 +714,8 @@ public final class RXTXCommDriver implements CommDriver {
      */
     public CommPort getCommPort(String portName, int portType) {
         if (portType != CommPortIdentifier.PORT_SERIAL) {
-            LOGGER.log(Level.WARNING,
-                    "unknown port type {0} passed, "
-                    + "this should never happen",
-                    portType);
+            logger.warn("unknown port type {} passed, "
+                    + "this should never happen", portType);
             return null;
         }
         try {
@@ -732,8 +725,7 @@ public final class RXTXCommDriver implements CommDriver {
                 return new RXTXPort(context, deviceDirectory + portName);
             }
         } catch (PortInUseException e) {
-            LOGGER.log(Level.INFO, "Port {0} in use by another application",
-                    portName);
+            logger.info("Port {} in use by another application", portName);
         }
         return null;
     }
